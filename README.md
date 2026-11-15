@@ -2,6 +2,10 @@ Chipin is a unified group wallet that brings shared financial activity into a si
 Imagine you and your friends share a lot of stuff: food, trips, favors. Normally you’d need a bunch of different apps to keep track of it all. Chipin puts everything in one shared wallet instead.
 In that wallet, there are three kinds of “money”: real cash, green points for doing eco-friendly things, and time credits for the hours you spend helping each other.
 Here’s what you can do with it (not limited to) 
+
+
+
+
 ●	Split bills: If someone pays for dinner, Chipin figures out who owes what, and it suggests the easiest way to pay everyone back. A chart shows who owes whom.
 ●	Save without thinking: Every payment gets rounded up, and the extra change goes into a shared savings pot.
 ●	Trade skills: If you help a friend with their homework, they pay you in time credits. The credits are held safely until the job is done, and if there’s an argument, there’s a system to sort it out.
