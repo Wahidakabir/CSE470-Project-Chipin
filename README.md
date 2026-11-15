@@ -7,7 +7,11 @@ Here’s what you can do with it (not limited to)
 
 
 ●	Split bills: If someone pays for dinner, Chipin figures out who owes what, and it suggests the easiest way to pay everyone back. A chart shows who owes whom.
+
 ●	Save without thinking: Every payment gets rounded up, and the extra change goes into a shared savings pot.
+
 ●	Trade skills: If you help a friend with their homework, they pay you in time credits. The credits are held safely until the job is done, and if there’s an argument, there’s a system to sort it out.
+
 ●	Time capsule: The group saves goals and messages to open on a future date.
+
 ●	Trust score: The more reliable you are at paying people back and finishing what you promised, the higher your score.
