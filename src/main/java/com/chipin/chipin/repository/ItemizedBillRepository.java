@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface ItemizedBillRepository extends JpaRepository<ItemizedBill, Long> {
     List<ItemizedBill> findByGroupId(String groupId);
+    List<ItemizedBill> findByGroupIdOrderByIdDesc(String groupId);
 }
