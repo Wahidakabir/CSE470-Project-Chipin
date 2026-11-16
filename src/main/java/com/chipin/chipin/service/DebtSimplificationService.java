@@ -32,11 +32,14 @@ public class DebtSimplificationService {
 
     private final ExpenseRepository expenseRepository;
     private final DebtSettlementRepository settlementRepository;
+    private final RoundUpService roundUpService;
 
     public DebtSimplificationService(ExpenseRepository expenseRepository,
-                                     DebtSettlementRepository settlementRepository) {
+                                     DebtSettlementRepository settlementRepository,
+                                     RoundUpService roundUpService) {
         this.expenseRepository = expenseRepository;
         this.settlementRepository = settlementRepository;
+        this.roundUpService = roundUpService;
     }
 
     public DebtOverview getOverview(String groupId, List<String> members) {
@@ -106,7 +109,7 @@ public class DebtSimplificationService {
         return payments.size();
     }
 
-    // Saves one payment.
+    // Saves the payment, then lets Feature 3 round it up into the payer's savings.
     private DebtSettlement saveSettlement(String groupId, String fromUserId, String toUserId,
                                           BigDecimal amount, String recordedByUserId) {
         DebtSettlement settlement = new DebtSettlement();
@@ -116,7 +119,9 @@ public class DebtSimplificationService {
         settlement.setAmount(amount);
         settlement.setRecordedByUserId(recordedByUserId);
         settlement.setSettledAt(LocalDateTime.now());
-        return settlementRepository.save(settlement);
+        DebtSettlement saved = settlementRepository.save(settlement);
+        roundUpService.applyToSettlement(saved);
+        return saved;
     }
 
     // ---------- Helpers ----------
