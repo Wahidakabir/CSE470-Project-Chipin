@@ -1,5 +1,6 @@
 package com.chipin.chipin.service;
 
+import com.chipin.chipin.dto.GoalTotal;
 import com.chipin.chipin.dto.RoundUpOverview;
 import com.chipin.chipin.dto.RoundUpResult;
 import com.chipin.chipin.model.DebtSettlement;
@@ -15,7 +16,9 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -59,11 +62,15 @@ public class RoundUpService {
         BigDecimal minePersonal = BigDecimal.ZERO.setScale(2);
         BigDecimal groupGoals = BigDecimal.ZERO.setScale(2);
         List<RoundUpSaving> myHistory = new ArrayList<>();
+        List<RoundUpSaving> goalSavings = new ArrayList<>(); // my personal goals + everyone's group goals
 
         for (RoundUpSaving saving : savingRepository.findByGroupIdOrderByCreatedAtDesc(groupId)) {
             boolean toGroup = GROUP.equals(saving.getDestinationType());
             if (toGroup) {
                 groupGoals = groupGoals.add(saving.getTotalSaved());
+                goalSavings.add(saving);
+            } else if (userId.equals(saving.getUserId())) {
+                goalSavings.add(saving);
             }
             if (userId.equals(saving.getUserId())) {
                 myHistory.add(saving);
@@ -83,7 +90,8 @@ public class RoundUpService {
             }
         }
 
-        return new RoundUpOverview(settings, mine, minePersonal, groupGoals, myHistory, examples, weekendToday);
+        return new RoundUpOverview(settings, mine, minePersonal, groupGoals, myHistory, examples,
+                weekendToday, goalTotals(goalSavings));
     }
 
     // The saving made from one settlement, if round-up was on for the payer.
@@ -159,7 +167,38 @@ public class RoundUpService {
         return Optional.of(savingRepository.save(saving));
     }
 
+    // Removes the saving made from a payment (used when that payment is undone).
+    @Transactional
+    public void removeForSettlement(Long settlementId) {
+        savingRepository.deleteAll(savingRepository.findBySettlementId(settlementId));
+    }
+
     // ---------- Helpers ----------
+
+    // Adds the savings up per goal. A personal and a group goal with the same name stay separate.
+    private List<GoalTotal> goalTotals(List<RoundUpSaving> savings) {
+        Map<String, BigDecimal> totals = new LinkedHashMap<>();
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        for (RoundUpSaving saving : savings) {
+            String key = saving.getDestinationType() + "|" + saving.getDestinationName();
+            totals.merge(key, saving.getTotalSaved(), BigDecimal::add);
+            counts.merge(key, 1, Integer::sum);
+        }
+
+        BigDecimal largest = BigDecimal.ZERO;
+        for (BigDecimal total : totals.values()) {
+            largest = largest.max(total);
+        }
+
+        List<GoalTotal> goals = new ArrayList<>();
+        for (Map.Entry<String, BigDecimal> e : totals.entrySet()) {
+            String[] key = e.getKey().split("\\|", 2);
+            int barWidth = largest.signum() == 0 ? 0
+                    : e.getValue().multiply(new BigDecimal("100")).divide(largest, 0, RoundingMode.HALF_UP).intValue();
+            goals.add(new GoalTotal(key[1], key[0], e.getValue(), counts.get(e.getKey()), barWidth));
+        }
+        return goals;
+    }
 
     private RoundUpResult calculate(BigDecimal payment, RoundUpSettings settings, boolean weekend) {
         BigDecimal fixedExtra = settings.isFixedExtraEnabled() ? settings.getFixedExtraAmount() : null;

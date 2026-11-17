@@ -66,6 +66,10 @@ public class SharedAssetService {
         return views;
     }
 
+    public AssetView getAssetView(Long assetId, List<String> members) {
+        return buildView(requireAsset(assetId), members);
+    }
+
     private AssetView buildView(SharedAsset asset, List<String> members) {
         BigDecimal value = valueToday(asset);
         Map<String, BigDecimal> shares = loadShares(asset.getId());

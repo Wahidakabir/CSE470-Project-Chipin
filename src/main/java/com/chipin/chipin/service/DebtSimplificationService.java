@@ -100,13 +100,50 @@ public class DebtSimplificationService {
     }
 
     // Records every suggested payment at once, leaving all balances at zero.
+    // Returns the payments that were recorded.
     @Transactional
-    public int settleAll(String groupId, List<String> members, String recordedByUserId) {
-        List<DebtEdge> payments = getOverview(groupId, members).getSimplifiedPayments();
-        for (DebtEdge p : payments) {
-            saveSettlement(groupId, p.getFromUserId(), p.getToUserId(), p.getAmount(), recordedByUserId);
+    public List<DebtSettlement> settleAll(String groupId, List<String> members, String recordedByUserId) {
+        List<DebtSettlement> recorded = new ArrayList<>();
+        for (DebtEdge p : getOverview(groupId, members).getSimplifiedPayments()) {
+            recorded.add(saveSettlement(groupId, p.getFromUserId(), p.getToUserId(),
+                    p.getAmount(), recordedByUserId));
         }
-        return payments.size();
+        return recorded;
+    }
+
+    // Undoes a payment that was marked by mistake, along with its round-up saving.
+    // Only the most recent payment can be undone, so earlier history stays consistent.
+    @Transactional
+    public DebtSettlement undoPayment(String groupId, Long settlementId) {
+        List<DebtSettlement> all = settlementRepository.findByGroupIdOrderBySettledAtDesc(groupId);
+        if (all.isEmpty()) {
+            throw new IllegalStateException("There are no payments to undo.");
+        }
+        DebtSettlement latest = latestOf(all);
+        if (!latest.getId().equals(settlementId)) {
+            throw new IllegalStateException("Only the most recent payment can be undone.");
+        }
+        roundUpService.removeForSettlement(latest.getId());
+        settlementRepository.delete(latest);
+        return latest;
+    }
+
+    // The id of the payment that can be undone, or null if there are none.
+    public Long undoablePaymentId(String groupId) {
+        List<DebtSettlement> all = settlementRepository.findByGroupIdOrderBySettledAtDesc(groupId);
+        return all.isEmpty() ? null : latestOf(all).getId();
+    }
+
+    // Newest by time; payments recorded together (Settle all) are told apart by id.
+    private DebtSettlement latestOf(List<DebtSettlement> settlements) {
+        DebtSettlement latest = settlements.get(0);
+        for (DebtSettlement s : settlements) {
+            int byTime = s.getSettledAt().compareTo(latest.getSettledAt());
+            if (byTime > 0 || (byTime == 0 && s.getId() > latest.getId())) {
+                latest = s;
+            }
+        }
+        return latest;
     }
 
     // Saves the payment, then lets Feature 3 round it up into the payer's savings.

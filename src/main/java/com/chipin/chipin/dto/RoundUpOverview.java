@@ -15,10 +15,12 @@ public class RoundUpOverview {
     private final List<RoundUpSaving> myHistory;
     private final List<RoundUpResult> examples;  // what the current rules do to sample payments
     private final boolean weekendToday;
+    private final List<GoalTotal> goals;         // this member's personal goals plus the group's goals
 
     public RoundUpOverview(RoundUpSettings settings, BigDecimal mySavedTotal, BigDecimal myPersonalTotal,
                            BigDecimal groupGoalTotal, List<RoundUpSaving> myHistory,
-                           List<RoundUpResult> examples, boolean weekendToday) {
+                           List<RoundUpResult> examples, boolean weekendToday,
+                           List<GoalTotal> goals) {
         this.settings = settings;
         this.mySavedTotal = mySavedTotal;
         this.myPersonalTotal = myPersonalTotal;
@@ -26,6 +28,7 @@ public class RoundUpOverview {
         this.myHistory = myHistory;
         this.examples = examples;
         this.weekendToday = weekendToday;
+        this.goals = goals;
     }
 
     public RoundUpSettings getSettings() { return settings; }
@@ -35,5 +38,6 @@ public class RoundUpOverview {
     public List<RoundUpSaving> getMyHistory() { return myHistory; }
     public List<RoundUpResult> getExamples() { return examples; }
     public boolean isWeekendToday() { return weekendToday; }
+    public List<GoalTotal> getGoals() { return goals; }
     public int getPaymentCount() { return myHistory.size(); }
 }
