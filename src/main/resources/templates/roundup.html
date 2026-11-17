@@ -169,6 +169,31 @@
         </div>
     </section>
 
+    <!-- Totals per goal -->
+    <section>
+        <h2 class="section-title">Savings goals</h2>
+        <div class="card">
+            <p th:if="${#lists.isEmpty(overview.goals)}" class="hint">
+                No goal has received money yet. Your round-ups will be listed here under the goal you choose.
+            </p>
+            <ul class="goal-list" th:if="${!#lists.isEmpty(overview.goals)}">
+                <li class="goal-row" th:each="g : ${overview.goals}">
+                    <span class="goal-name">
+                        <strong th:text="${g.name}">Cox's Bazar trip</strong>
+                        <span class="tag" th:text="${g.group} ? 'group' : 'personal'">group</span>
+                    </span>
+                    <span class="goal-track" aria-hidden="true">
+                        <span class="goal-bar" th:style="'width:' + ${g.barWidth} + '%'"></span>
+                    </span>
+                    <span class="goal-total">
+                        <strong th:text="'৳' + ${g.total}">৳87.33</strong>
+                        <span class="meta" th:text="'from ' + ${g.payments} + (${g.payments == 1} ? ' round-up' : ' round-ups')">from 3 round-ups</span>
+                    </span>
+                </li>
+            </ul>
+        </div>
+    </section>
+
     <!-- Saving history -->
     <section>
         <h2 class="section-title">Your round-ups</h2>

@@ -46,3 +46,19 @@
 /* wide history table scrolls sideways on small screens instead of breaking the page */
 .table-scroll { overflow-x: auto; }
 .table-scroll .data-table { min-width: 640px; }
+
+/* totals per savings goal */
+.goal-list { list-style: none; margin: 0; padding: 0; }
+.goal-row {
+  display: grid; grid-template-columns: minmax(160px, 1.2fr) 2fr minmax(150px, auto); align-items: center;
+  gap: 16px; padding: 12px 0; border-bottom: 2px solid var(--line);
+}
+.goal-row:last-child { border-bottom: none; }
+.goal-name { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.goal-track { height: 12px; background: var(--line); border-radius: 999px; overflow: hidden; }
+.goal-bar { display: block; height: 100%; background: var(--brand); border-radius: 999px; }
+.goal-total { text-align: right; display: flex; flex-direction: column; }
+@media (max-width: 700px) {
+  .goal-row { grid-template-columns: 1fr; gap: 8px; }
+  .goal-total { text-align: left; }
+}

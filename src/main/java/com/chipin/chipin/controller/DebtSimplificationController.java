@@ -36,6 +36,7 @@ public class DebtSimplificationController {
         model.addAttribute("overview", debtService.getOverview(DEFAULT_GROUP_ID, DEMO_MEMBERS));
         model.addAttribute("currentUser", currentUser);
         model.addAttribute("members", DEMO_MEMBERS);
+        model.addAttribute("undoablePaymentId", debtService.undoablePaymentId(DEFAULT_GROUP_ID));
         return "debts";
     }
 
@@ -64,9 +65,33 @@ public class DebtSimplificationController {
     @PostMapping("/settle-all")
     public String settleAll(@RequestParam String currentUser, RedirectAttributes redirectAttributes) {
         try {
-            int count = debtService.settleAll(DEFAULT_GROUP_ID, DEMO_MEMBERS, currentUser);
+            List<DebtSettlement> payments = debtService.settleAll(DEFAULT_GROUP_ID, DEMO_MEMBERS, currentUser);
+            BigDecimal saved = BigDecimal.ZERO;
+            for (DebtSettlement payment : payments) {
+                Optional<RoundUpSaving> saving = roundUpService.findForSettlement(payment.getId());
+                if (saving.isPresent()) {
+                    saved = saved.add(saving.get().getTotalSaved());
+                }
+            }
+            String message = payments.size() + " payment(s) recorded. The group is all settled up!";
+            if (saved.signum() > 0) {
+                message += " Round-up saved ৳" + saved + " in total.";
+            }
+            redirectAttributes.addFlashAttribute("successMessage", message);
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/debts?currentUser=" + currentUser;
+    }
+
+    @PostMapping("/settlements/{id}/undo")
+    public String undoPayment(@PathVariable Long id, @RequestParam String currentUser,
+                              RedirectAttributes redirectAttributes) {
+        try {
+            DebtSettlement undone = debtService.undoPayment(DEFAULT_GROUP_ID, id);
             redirectAttributes.addFlashAttribute("successMessage",
-                    count + " payment(s) recorded. The group is all settled up!");
+                    "Undone: " + undone.getFromUserId() + " paying " + undone.getToUserId() + " ৳"
+                            + undone.getAmount() + ". Any round-up from it was removed too.");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }

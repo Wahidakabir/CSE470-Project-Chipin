@@ -152,13 +152,20 @@
                 <p th:if="${#lists.isEmpty(overview.settlements)}" class="hint">No payments yet.</p>
                 <table class="data-table" th:if="${!#lists.isEmpty(overview.settlements)}">
                     <thead>
-                    <tr><th>Payment</th><th class="num">Amount</th><th>When</th></tr>
+                    <tr><th>Payment</th><th class="num">Amount</th><th>When</th><th></th></tr>
                     </thead>
                     <tbody>
                     <tr th:each="s : ${overview.settlements}">
                         <td><span th:text="${s.fromUserId}"></span> paid <span th:text="${s.toUserId}"></span></td>
                         <td class="num" th:text="'৳' + ${s.amount}"></td>
                         <td th:text="${#temporals.format(s.settledAt, 'dd MMM, HH:mm')}"></td>
+                        <td class="num">
+                            <form th:if="${s.id == undoablePaymentId}" method="post"
+                                  th:action="@{/debts/settlements/{id}/undo(id=${s.id})}">
+                                <input type="hidden" name="currentUser" th:value="${currentUser}"/>
+                                <button type="submit" class="btn btn-small btn-danger">Undo</button>
+                            </form>
+                        </td>
                     </tr>
                     </tbody>
                 </table>
