@@ -20,8 +20,8 @@
             <details class="more">
                 <summary class="tab">Team features</summary>
                 <div class="more-menu">
-                    <a th:href="@{${budgetPath}(currentUser=${currentUser})}">Group budget</a>
-                    <a th:href="@{${savingsGoalsPath}(currentUser=${currentUser})}">Savings goals</a>
+                    <a th:href="@{/assets/open/budget(currentUser=${currentUser})}">Group budget</a>
+                    <a th:href="@{/assets/open/savings-goals(currentUser=${currentUser})}">Savings goals</a>
                     <a th:href="@{/voting(currentUser=${currentUser})}">Expense voting</a>
                     <a th:href="@{/emergency(currentUser=${currentUser})}">Emergency fund</a>
                     <a th:href="@{/health-score(currentUser=${currentUser})}">Health score</a>
@@ -48,16 +48,17 @@
             <strong th:text="'৳' + ${v.currentValue}"></strong> today.
             Every share change and cost is listed below with the value at that time.
         </p>
-    </div>
-
-    <section class="card related-card" aria-label="Connected features">
-        <p class="related-text"><strong>Connected features</strong>
-            Asset running costs count toward the group budget, and a buy-in can be paid from a savings goal.</p>
-        <div class="related-links">
-            <a class="btn btn-secondary" th:href="@{${budgetPath}(currentUser=${currentUser})}">Open group budget</a>
-            <a class="btn btn-secondary" th:href="@{${savingsGoalsPath}(currentUser=${currentUser})}">Open savings goals</a>
+        <div class="quick-links">
+            <a class="quick-link" th:href="@{/assets/open/budget(currentUser=${currentUser})}">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9"/><path d="M12 3v9h9"/></svg>
+                Group budget
+            </a>
+            <a class="quick-link" th:href="@{/assets/open/savings-goals(currentUser=${currentUser})}">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8"/></svg>
+                Savings goals
+            </a>
         </div>
-    </section>
+    </div>
 
     <section class="card">
         <h2>Owners now</h2>

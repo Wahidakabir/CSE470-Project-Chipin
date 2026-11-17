@@ -1,6 +1,7 @@
 package com.chipin.chipin.controller;
 
 import com.chipin.chipin.service.SharedAssetService;
+import org.springframework.context.ApplicationContext;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -24,22 +25,51 @@ public class SharedAssetController {
     private static final String DEFAULT_GROUP_ID = "group_01";
     private static final List<String> DEMO_MEMBERS = Arrays.asList("Afifa", "Mufliha", "Musarrat", "Sayma");
 
-    // Pages of other teammates' features that connect to shared assets.
-    // Budget (Feature 11): asset running costs are saved as expenses, which the budget adds up.
-    // Savings Goals (Feature 15): a buy-in can be paid from a goal.
-    // If a teammate's page lives at a different address, change it here only.
-    private static final String BUDGET_PATH = "/health-score";
-    private static final String SAVINGS_GOALS_PATH = "/savings-goals";
+    // Pages of two teammates' features that connect to shared assets:
+    //   Feature 11 Group Budget Management (/budgets): asset running costs are saved as expenses, which a budget adds up.
+    //   Feature 15 Collaborative Savings   (/savings):  a buy-in can be paid from a goal.
+    // The buttons open these pages when the teammate's controller is part of this project.
+    private static final String BUDGET_PATH = "/budgets";
+    private static final String BUDGET_CONTROLLER_BEAN = "budgetController";
+    private static final String SAVINGS_GOALS_PATH = "/savings";
+    private static final String SAVINGS_GOALS_CONTROLLER_BEAN = "savingsGoalController";
 
-    public SharedAssetController(SharedAssetService assetService) {
+    private final ApplicationContext applicationContext;
+
+    public SharedAssetController(SharedAssetService assetService, ApplicationContext applicationContext) {
         this.assetService = assetService;
+        this.applicationContext = applicationContext;
     }
 
     private void addPageBasics(Model model, String currentUser) {
         model.addAttribute("currentUser", currentUser);
         model.addAttribute("members", DEMO_MEMBERS);
-        model.addAttribute("budgetPath", BUDGET_PATH);
-        model.addAttribute("savingsGoalsPath", SAVINGS_GOALS_PATH);
+    }
+
+    // The "Group budget" and "Savings goals" buttons come here. If the teammate's page is part of
+    // this project we send the person there; if not, they stay on the assets page with a short message.
+    @GetMapping("/open/budget")
+    public String openBudget(@RequestParam(defaultValue = "Mufliha") String currentUser,
+                             RedirectAttributes redirectAttributes) {
+        return openTeammatePage(BUDGET_PATH, BUDGET_CONTROLLER_BEAN, "Group budget (feature 11)",
+                currentUser, redirectAttributes);
+    }
+
+    @GetMapping("/open/savings-goals")
+    public String openSavingsGoals(@RequestParam(defaultValue = "Mufliha") String currentUser,
+                                   RedirectAttributes redirectAttributes) {
+        return openTeammatePage(SAVINGS_GOALS_PATH, SAVINGS_GOALS_CONTROLLER_BEAN, "Savings goals (feature 15)",
+                currentUser, redirectAttributes);
+    }
+
+    private String openTeammatePage(String path, String controllerBean, String featureName,
+                                    String currentUser, RedirectAttributes redirectAttributes) {
+        if (applicationContext.containsBean(controllerBean)) {
+            return "redirect:" + path + "?currentUser=" + currentUser;
+        }
+        redirectAttributes.addFlashAttribute("errorMessage",
+                featureName + " is not added to this project yet. This button opens it once that feature is merged.");
+        return "redirect:/assets?currentUser=" + currentUser;
     }
 
     @GetMapping

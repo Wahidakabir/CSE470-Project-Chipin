@@ -44,9 +44,19 @@
   .span-2 { grid-column: span 1; }
 }
 
-/* links to the budget and savings goals pages */
-.related-card { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; padding-block: 14px; }
-.related-text { margin: 0; max-width: 50ch; color: var(--ink-2); }
-.related-text strong { display: block; }
-.related-links { display: flex; gap: 10px; flex-wrap: wrap; }
-.related-links a { text-decoration: none; }
+/* quick links to the budget and savings goals pages */
+.quick-links { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+.quick-link {
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 9px 18px 9px 14px; border-radius: 999px;
+  background: var(--surface); color: var(--ink); text-decoration: none;
+  font-weight: 700; font-size: 0.95rem;
+  border: 2px solid var(--brand);
+  transition: background .15s ease, color .15s ease, transform .15s ease;
+}
+.quick-link svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+a.quick-link:hover, a.quick-link:focus-visible { background: var(--brand); color: var(--on-brand); transform: translateY(-1px); }
+a.quick-link:focus-visible { outline: 3px solid var(--brand-strong); outline-offset: 2px; }
+.quick-link.is-soon { border-style: dashed; border-color: var(--field-border); color: var(--ink-3); cursor: default; }
+.quick-link small { font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--ground); color: var(--ink-2); }
+@media (prefers-reduced-motion: reduce) { .quick-link { transition: none; } a.quick-link:hover { transform: none; } }
