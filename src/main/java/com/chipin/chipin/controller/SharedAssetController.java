@@ -24,17 +24,45 @@ public class SharedAssetController {
     private static final String DEFAULT_GROUP_ID = "group_01";
     private static final List<String> DEMO_MEMBERS = Arrays.asList("Afifa", "Mufliha", "Musarrat", "Sayma");
 
+    // Pages of other teammates' features that connect to shared assets.
+    // Budget (Feature 11): asset running costs are saved as expenses, which the budget adds up.
+    // Savings Goals (Feature 15): a buy-in can be paid from a goal.
+    // If a teammate's page lives at a different address, change it here only.
+    private static final String BUDGET_PATH = "/health-score";
+    private static final String SAVINGS_GOALS_PATH = "/savings-goals";
+
     public SharedAssetController(SharedAssetService assetService) {
         this.assetService = assetService;
+    }
+
+    private void addPageBasics(Model model, String currentUser) {
+        model.addAttribute("currentUser", currentUser);
+        model.addAttribute("members", DEMO_MEMBERS);
+        model.addAttribute("budgetPath", BUDGET_PATH);
+        model.addAttribute("savingsGoalsPath", SAVINGS_GOALS_PATH);
     }
 
     @GetMapping
     public String viewAssetsPage(@RequestParam(defaultValue = "Mufliha") String currentUser, Model model) {
         model.addAttribute("assets", assetService.getGroupAssetViews(DEFAULT_GROUP_ID, DEMO_MEMBERS));
-        model.addAttribute("currentUser", currentUser);
-        model.addAttribute("members", DEMO_MEMBERS);
+        addPageBasics(model, currentUser);
         model.addAttribute("today", LocalDate.now());
         return "assets";
+    }
+
+    // Every share change and cost for one asset, with the value at that time.
+    @GetMapping("/{id}/history")
+    public String viewAssetHistory(@PathVariable Long id,
+                                   @RequestParam(defaultValue = "Mufliha") String currentUser,
+                                   Model model, RedirectAttributes redirectAttributes) {
+        try {
+            model.addAttribute("v", assetService.getAssetView(id, DEMO_MEMBERS));
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/assets?currentUser=" + currentUser;
+        }
+        addPageBasics(model, currentUser);
+        return "asset-history";
     }
 
     // The form sends one "paid" amount per member, in the same order as DEMO_MEMBERS.

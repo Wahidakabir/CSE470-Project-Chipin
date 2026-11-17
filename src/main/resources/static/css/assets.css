@@ -31,9 +31,8 @@
 .inline-fields input, .inline-fields select { flex: 1; min-width: 130px; }
 
 /* history */
-.history { margin-top: 22px; border-top: 2px solid var(--line); padding-top: 14px; }
-.history summary { cursor: pointer; font-weight: 700; color: var(--ink); }
-.history[open] summary { margin-bottom: 10px; }
+.history-link { margin: 22px 0 0; padding-top: 14px; border-top: 2px solid var(--line); font-weight: 700; }
+.back-link { margin: 0 0 8px; font-weight: 600; }
 .table-scroll { overflow-x: auto; }
 .table-scroll .data-table { min-width: 640px; }
 .nowrap { white-space: nowrap; }
@@ -44,3 +43,10 @@
   .asset-value { text-align: left; }
   .span-2 { grid-column: span 1; }
 }
+
+/* links to the budget and savings goals pages */
+.related-card { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; padding-block: 14px; }
+.related-text { margin: 0; max-width: 50ch; color: var(--ink-2); }
+.related-text strong { display: block; }
+.related-links { display: flex; gap: 10px; flex-wrap: wrap; }
+.related-links a { text-decoration: none; }

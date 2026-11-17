@@ -20,6 +20,8 @@
             <details class="more">
                 <summary class="tab">Team features</summary>
                 <div class="more-menu">
+                    <a th:href="@{${budgetPath}(currentUser=${currentUser})}">Group budget</a>
+                    <a th:href="@{${savingsGoalsPath}(currentUser=${currentUser})}">Savings goals</a>
                     <a th:href="@{/voting(currentUser=${currentUser})}">Expense voting</a>
                     <a th:href="@{/emergency(currentUser=${currentUser})}">Emergency fund</a>
                     <a th:href="@{/health-score(currentUser=${currentUser})}">Health score</a>
@@ -44,6 +46,15 @@
 
     <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
     <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}"></div>
+
+    <section class="card related-card" aria-label="Connected features">
+        <p class="related-text"><strong>Connected features</strong>
+            Asset running costs count toward the group budget, and a buy-in can be paid from a savings goal.</p>
+        <div class="related-links">
+            <a class="btn btn-secondary" th:href="@{${budgetPath}(currentUser=${currentUser})}">Open group budget</a>
+            <a class="btn btn-secondary" th:href="@{${savingsGoalsPath}(currentUser=${currentUser})}">Open savings goals</a>
+        </div>
+    </section>
 
     <!-- Register -->
     <section class="card">
@@ -192,24 +203,11 @@
         </div>
 
         <!-- History -->
-        <details class="history">
-            <summary>History (<span th:text="${#lists.size(v.events)}">0</span>)</summary>
-            <div class="table-scroll">
-                <table class="data-table">
-                    <thead>
-                    <tr><th>When</th><th>What happened</th><th class="num">Value then</th><th>Shares after</th></tr>
-                    </thead>
-                    <tbody>
-                    <tr th:each="e : ${v.events}">
-                        <td class="nowrap" th:text="${#temporals.format(e.createdAt, 'dd MMM yyyy, HH:mm')}"></td>
-                        <td th:text="${e.description}"></td>
-                        <td class="num" th:text="'৳' + ${e.valueAtTime}"></td>
-                        <td class="meta" th:text="${e.sharesSnapshot}"></td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
-        </details>
+        <p class="history-link">
+            <a th:href="@{/assets/{id}/history(id=${v.asset.id}, currentUser=${currentUser})}">
+                View full history (<span th:text="${#lists.size(v.events)}">0</span> entries)
+            </a>
+        </p>
     </section>
 </div>
 </body>
