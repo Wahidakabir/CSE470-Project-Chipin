@@ -1,0 +1,68 @@
+/* Feature 4: Settlement scheduler page. Colours and type come from chipin-ui.css and the theme. */
+
+.hero {
+  display: flex; justify-content: space-between; align-items: center; gap: 24px;
+  flex-wrap: wrap; margin-bottom: 32px;
+}
+.hero h1 { margin: 0 0 8px; font-size: clamp(1.8rem, 4vw, 2.7rem); letter-spacing: -0.03em; line-height: 1.1; }
+.lead { margin: 0; font-size: 1.05rem; max-width: 52ch; color: var(--ink-2); }
+.hero-action { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; max-width: 260px; }
+
+.two-col { display: grid; grid-template-columns: 1.1fr 1fr; gap: 24px; align-items: start; }
+.block { margin-top: 32px; }
+.empty { margin: 0; color: var(--ink-2); }
+
+/* new schedule form */
+.schedule-form { display: flex; flex-direction: column; gap: 18px; }
+.schedule-form .btn { align-self: flex-start; }
+.field { display: flex; flex-direction: column; gap: 8px; }
+.field[hidden] { display: none; }
+.field-label { font-weight: 700; font-size: 0.95rem; color: var(--ink); }
+.field select { max-width: 280px; }
+.rule-help { display: block; font-size: 0.85rem; color: var(--ink-3); }
+
+.choice-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.choice {
+  display: flex; align-items: center; gap: 8px; padding: 10px 16px; cursor: pointer;
+  border: 2px solid var(--field-border); border-radius: 999px; font-size: 0.95rem; color: var(--ink);
+}
+.choice:has(input:checked) { border-color: var(--brand); background: var(--brand-wash); }
+.choice input { accent-color: var(--brand); width: 16px; height: 16px; padding: 0; }
+
+.mode {
+  display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; cursor: pointer;
+  border: 2px solid var(--field-border); border-radius: var(--r-md); color: var(--ink);
+}
+.mode:has(input:checked) { border-color: var(--brand); background: var(--brand-wash); }
+.mode input { margin-top: 3px; accent-color: var(--brand); width: 16px; height: 16px; flex: none; padding: 0; }
+
+/* reminders */
+.reminder-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.reminder {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 14px 16px;
+}
+.reminder.mine { border-color: var(--brand); }
+.reminder-actions { display: flex; gap: 6px; align-items: center; }
+.reminder-actions form { margin: 0; }
+
+/* schedules */
+.schedule-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+.schedule { display: flex; flex-direction: column; gap: 14px; }
+.schedule.paused { opacity: 0.7; }
+.schedule-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
+.schedule-head h3 { margin: 0; font-size: 1.1rem; }
+.schedule-facts { margin: 0; display: grid; gap: 8px; }
+.schedule-facts div { display: flex; justify-content: space-between; gap: 12px; }
+.schedule-facts dt { color: var(--ink-3); font-size: 0.9rem; }
+.schedule-facts dd { margin: 0; text-align: right; font-size: 0.95rem; }
+.schedule-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: auto; }
+.schedule-actions form { margin: 0; }
+
+.table-scroll { overflow-x: auto; }
+.table-scroll .data-table { min-width: 560px; }
+.nowrap { white-space: nowrap; }
+
+@media (max-width: 860px) {
+  .two-col { grid-template-columns: 1fr; }
+}

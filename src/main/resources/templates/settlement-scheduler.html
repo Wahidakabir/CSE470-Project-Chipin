@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Chipin — Settlement scheduler</title>
+    <link rel="stylesheet" th:href="@{/css/chipin-ui.css}">
+    <link rel="stylesheet" th:href="@{/css/theme-fun.css}">
+    <link rel="stylesheet" th:href="@{/css/settlement-scheduler.css}">
+</head>
+<body>
+<div class="container">
+    <header class="appbar">
+        <a class="brand" th:href="@{/debts(currentUser=${currentUser})}">Chipin</a>
+        <nav class="tabs" aria-label="Chipin features">
+            <a th:href="@{/debts(currentUser=${currentUser})}" class="tab">Debts</a>
+            <a th:href="@{/bills(currentUser=${currentUser})}" class="tab">Itemized bills</a>
+            <a th:href="@{/roundup(currentUser=${currentUser})}" class="tab">Round-up</a>
+            <a th:href="@{/settlement-scheduler(currentUser=${currentUser})}" class="tab active">Scheduler</a>
+            <a th:href="@{/assets(currentUser=${currentUser})}" class="tab">Shared assets</a>
+            <details class="more">
+                <summary class="tab">Team features</summary>
+                <div class="more-menu">
+                    <a th:href="@{/voting(currentUser=${currentUser})}">Expense voting</a>
+                    <a th:href="@{/emergency(currentUser=${currentUser})}">Emergency fund</a>
+                    <a th:href="@{/health-score(currentUser=${currentUser})}">Health score</a>
+                    <a th:href="@{/recurring(currentUser=${currentUser})}">Recurring bills</a>
+                    <a th:href="@{/receipts(currentUser=${currentUser})}">Receipt vault</a>
+                </div>
+            </details>
+        </nav>
+        <form method="get" th:action="@{/settlement-scheduler}" class="user-switcher">
+            <label for="currentUser">Acting as</label>
+            <select id="currentUser" name="currentUser" onchange="this.form.submit()">
+                <option th:each="m : ${members}" th:value="${m}" th:text="${m}"
+                        th:selected="${m == currentUser}"></option>
+            </select>
+        </form>
+    </header>
+
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}"></div>
+
+    <!-- Where things stand -->
+    <section class="hero">
+        <div>
+            <h1 th:if="${overview.settledUp}">Everyone is settled up</h1>
+            <h1 th:unless="${overview.settledUp}">
+                ৳<span th:text="${overview.totalNeededNow}">0.00</span> still to settle
+            </h1>
+            <p class="lead" th:if="${overview.settledUp}">
+                Nothing is owed right now. A schedule has nothing to do until new expenses are added.
+            </p>
+            <p class="lead" th:unless="${overview.settledUp}">
+                That takes <strong th:text="${#lists.size(overview.paymentsNeededNow)}">3</strong>
+                <span th:text="${#lists.size(overview.paymentsNeededNow) == 1} ? 'payment' : 'payments'">payments</span>
+                on the <a th:href="@{/debts(currentUser=${currentUser})}">Debts</a> page.
+                A schedule settles them for you on the date you choose.
+            </p>
+        </div>
+        <form th:action="@{/settlement-scheduler/run-due}" method="post" class="hero-action">
+            <input type="hidden" name="currentUser" th:value="${currentUser}"/>
+            <button type="submit" class="btn btn-secondary" th:classappend="${overview.hasDueSchedule()} ? 'btn-primary'">
+                Run due schedules now
+            </button>
+            <span class="meta">Checked every day at 02:00 and when the app starts.</span>
+        </form>
+    </section>
+
+    <section class="two-col">
+        <!-- New schedule -->
+        <div>
+            <h2>New schedule</h2>
+            <form th:action="@{/settlement-scheduler/create}" method="post" class="card schedule-form" id="scheduleForm">
+                <input type="hidden" name="currentUser" th:value="${currentUser}"/>
+
+                <div class="field">
+                    <span class="field-label">How often</span>
+                    <div class="choice-row">
+                        <label class="choice">
+                            <input type="radio" name="frequency" value="MONTHLY" checked/>
+                            <span>Every month</span>
+                        </label>
+                        <label class="choice">
+                            <input type="radio" name="frequency" value="WEEKLY"/>
+                            <span>Every week</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="field" id="monthlyField">
+                    <label for="monthDay" class="field-label">On</label>
+                    <select id="monthDay" name="monthDay">
+                        <option value="0" selected>The last day of the month</option>
+                        <option th:each="d : ${#numbers.sequence(1, 31)}" th:value="${d}" th:text="'Day ' + ${d}"></option>
+                    </select>
+                    <span class="rule-help">A short month uses its last day, so day 31 still runs in April.</span>
+                </div>
+
+                <div class="field" id="weeklyField" hidden>
+                    <label for="weekday" class="field-label">On</label>
+                    <select id="weekday" name="weekday">
+                        <option value="1">Monday</option>
+                        <option value="2">Tuesday</option>
+                        <option value="3">Wednesday</option>
+                        <option value="4">Thursday</option>
+                        <option value="5" selected>Friday</option>
+                        <option value="6">Saturday</option>
+                        <option value="7">Sunday</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <span class="field-label">What happens</span>
+                    <label class="mode">
+                        <input type="radio" name="runMode" value="REMINDER" checked/>
+                        <span>
+                            <strong>Remind members</strong>
+                            <span class="rule-help">Each person who owes money gets a reminder here. They still pay it themselves.</span>
+                        </span>
+                    </label>
+                    <label class="mode">
+                        <input type="radio" name="runMode" value="AUTO"/>
+                        <span>
+                            <strong>Pay automatically</strong>
+                            <span class="rule-help">All payments are recorded for you. Each one is rounded up and saved, like a normal payment.</span>
+                        </span>
+                    </label>
+                </div>
+
+                <p class="meta">Covers <span th:text="${#strings.listJoin(members, ', ')}">everyone</span>.
+                    The first run is the next matching date after today.</p>
+                <button type="submit" class="btn btn-primary">Save schedule</button>
+            </form>
+        </div>
+
+        <!-- Reminders -->
+        <div>
+            <h2>Reminders</h2>
+            <div class="card" th:if="${#lists.isEmpty(overview.openReminders)}">
+                <p class="empty">No reminders right now. When a reminder schedule runs, the payments people owe appear here.</p>
+            </div>
+            <ul class="reminder-list" th:unless="${#lists.isEmpty(overview.openReminders)}">
+                <li class="card reminder" th:each="r : ${overview.openReminders}"
+                    th:classappend="${r.fromUserId == currentUser} ? 'mine'">
+                    <div>
+                        <strong th:text="${r.fromUserId}">Sayma</strong> pays
+                        <strong th:text="${r.toUserId}">Mufliha</strong>
+                        <span class="tag tag-owed" th:text="'৳' + ${r.amount}">৳240.00</span>
+                        <span class="meta" th:text="'since ' + ${#temporals.format(r.createdOn, 'dd MMM')}">since 30 Nov</span>
+                    </div>
+                    <div class="reminder-actions">
+                        <a class="btn btn-secondary btn-small" th:href="@{/debts(currentUser=${currentUser})}">Pay on Debts</a>
+                        <form th:action="@{/settlement-scheduler/reminders/{id}/done(id=${r.id})}" method="post">
+                            <input type="hidden" name="currentUser" th:value="${currentUser}"/>
+                            <button type="submit" class="btn btn-small btn-danger">Dismiss</button>
+                        </form>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Schedules -->
+    <section class="block">
+        <h2>Your schedules</h2>
+        <div class="card" th:if="${#lists.isEmpty(overview.schedules)}">
+            <p class="empty">No schedules yet. Create one on the left, for example "the last day of every month".</p>
+        </div>
+        <div class="schedule-grid" th:unless="${#lists.isEmpty(overview.schedules)}">
+            <article class="card schedule" th:each="s : ${overview.schedules}"
+                     th:classappend="${!s.active} ? 'paused'">
+                <header class="schedule-head">
+                    <h3 th:text="${s.description}">Last day of every month</h3>
+                    <span class="tag" th:classappend="${s.auto} ? 'tag-owed'"
+                          th:text="${s.auto} ? 'Pays automatically' : 'Sends reminders'">Sends reminders</span>
+                </header>
+                <dl class="schedule-facts">
+                    <div th:if="${s.active}">
+                        <dt>Next run</dt>
+                        <dd>
+                            <span th:text="${#temporals.format(s.nextRunDate, 'EEE dd MMM yyyy')}">Mon 30 Nov 2026</span>
+                            <span class="meta" th:if="${s.dueNow}">due now</span>
+                            <span class="meta" th:if="${!s.dueNow and s.daysUntil == 1}">tomorrow</span>
+                            <span class="meta" th:if="${!s.dueNow and s.daysUntil > 1}" th:text="'in ' + ${s.daysUntil} + ' days'">in 12 days</span>
+                        </dd>
+                    </div>
+                    <div th:unless="${s.active}">
+                        <dt>Status</dt>
+                        <dd>Paused</dd>
+                    </div>
+                    <div>
+                        <dt>Last run</dt>
+                        <dd th:text="${s.lastRunDate != null} ? ${#temporals.format(s.lastRunDate, 'dd MMM yyyy')} : 'Not yet'">Not yet</dd>
+                    </div>
+                    <div>
+                        <dt>Set up by</dt>
+                        <dd th:text="${s.createdByUserId}">Mufliha</dd>
+                    </div>
+                </dl>
+                <div class="schedule-actions">
+                    <form th:action="@{/settlement-scheduler/{id}/run-now(id=${s.id})}" method="post">
+                        <input type="hidden" name="currentUser" th:value="${currentUser}"/>
+                        <button type="submit" class="btn btn-secondary btn-small">Run now</button>
+                    </form>
+                    <form th:action="@{/settlement-scheduler/{id}/toggle(id=${s.id})}" method="post">
+                        <input type="hidden" name="currentUser" th:value="${currentUser}"/>
+                        <input type="hidden" name="active" th:value="${!s.active}"/>
+                        <button type="submit" class="btn btn-secondary btn-small"
+                                th:text="${s.active} ? 'Pause' : 'Resume'">Pause</button>
+                    </form>
+                    <form th:action="@{/settlement-scheduler/{id}/delete(id=${s.id})}" method="post">
+                        <input type="hidden" name="currentUser" th:value="${currentUser}"/>
+                        <button type="submit" class="btn btn-small btn-danger"
+                                onclick="return confirm('Delete this schedule?');">Delete</button>
+                    </form>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <!-- History -->
+    <section class="block">
+        <h2>What ran</h2>
+        <div class="card" th:if="${#lists.isEmpty(overview.recentRuns)}">
+            <p class="empty">Nothing has run yet. Press "Run now" on a schedule to see how it works.</p>
+        </div>
+        <div class="card table-scroll" th:unless="${#lists.isEmpty(overview.recentRuns)}">
+            <table class="data-table">
+                <thead>
+                <tr><th>When</th><th>How</th><th>Result</th><th class="num">Amount</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="r : ${overview.recentRuns}">
+                    <td class="nowrap" th:text="${#temporals.format(r.ranAt, 'dd MMM, HH:mm')}"></td>
+                    <td>
+                        <span class="tag" th:text="${r.triggeredBy == 'MANUAL'} ? 'Run now' : 'On schedule'"></span>
+                        <span class="tag" th:text="${r.runMode == 'AUTO'} ? 'Automatic' : 'Reminders'"></span>
+                    </td>
+                    <td th:text="${r.note}"></td>
+                    <td class="num"><strong th:text="'৳' + ${r.totalAmount}"></strong></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<script>
+    // Shows the day picker that matches "every month" or "every week".
+    (function () {
+        var form = document.getElementById('scheduleForm');
+        var monthly = document.getElementById('monthlyField');
+        var weekly = document.getElementById('weeklyField');
+        function update() {
+            var isWeekly = form.elements['frequency'].value === 'WEEKLY';
+            weekly.hidden = !isWeekly;
+            monthly.hidden = isWeekly;
+        }
+        form.addEventListener('change', update);
+        update();
+    })();
+</script>
+</body>
+</html>
