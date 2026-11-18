@@ -1,0 +1,62 @@
+/* Feature 5: Shared assets page. Colours and type come from chipin-ui.css and the theme. */
+
+.form-note { margin: 0 0 16px; }
+.span-2 { grid-column: span 2; }
+.form-submit { margin-top: 18px; }
+
+.asset-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 14px; }
+.asset-header h3 { font-size: 1.3rem; }
+.asset-value { text-align: right; }
+.amount { display: block; font-family: var(--font-display); font-weight: 800; font-size: 1.6rem; white-space: nowrap; }
+
+/* how much value is left */
+.value-track { height: 12px; background: var(--line); border-radius: 999px; overflow: hidden; }
+.value-bar { display: block; height: 100%; background: var(--brand); border-radius: 999px; }
+.value-note { margin: 8px 0 0; }
+
+/* ownership share bars */
+.share-cell { display: flex; align-items: center; gap: 10px; min-width: 190px; }
+.share-track { flex: 1; height: 10px; background: var(--line); border-radius: 999px; overflow: hidden; min-width: 80px; }
+.share-bar { display: block; height: 100%; background: var(--brand); border-radius: 999px; }
+
+/* log use, add cost, buy in */
+.asset-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 22px; }
+.action-box {
+  display: flex; flex-direction: column; gap: 10px; align-items: flex-start;
+  background: var(--ground); border-radius: var(--r-md); padding: 16px;
+}
+.action-box input[type="text"] { width: 100%; }
+.action-box .btn { margin-top: auto; }
+.inline-fields { display: flex; gap: 8px; width: 100%; flex-wrap: wrap; }
+.inline-fields input, .inline-fields select { flex: 1; min-width: 130px; }
+
+/* history */
+.history-link { margin: 22px 0 0; padding-top: 14px; border-top: 2px solid var(--line); font-weight: 700; }
+.back-link { margin: 0 0 8px; font-weight: 600; }
+.table-scroll { overflow-x: auto; }
+.table-scroll .data-table { min-width: 640px; }
+.nowrap { white-space: nowrap; }
+
+@media (max-width: 860px) {
+  .asset-actions { grid-template-columns: 1fr; }
+  .asset-header { flex-direction: column; }
+  .asset-value { text-align: left; }
+  .span-2 { grid-column: span 1; }
+}
+
+/* quick links to the budget and savings goals pages */
+.quick-links { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+.quick-link {
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 9px 18px 9px 14px; border-radius: 999px;
+  background: var(--surface); color: var(--ink); text-decoration: none;
+  font-weight: 700; font-size: 0.95rem;
+  border: 2px solid var(--brand);
+  transition: background .15s ease, color .15s ease, transform .15s ease;
+}
+.quick-link svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+a.quick-link:hover, a.quick-link:focus-visible { background: var(--brand); color: var(--on-brand); transform: translateY(-1px); }
+a.quick-link:focus-visible { outline: 3px solid var(--brand-strong); outline-offset: 2px; }
+.quick-link.is-soon { border-style: dashed; border-color: var(--field-border); color: var(--ink-3); cursor: default; }
+.quick-link small { font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--ground); color: var(--ink-2); }
+@media (prefers-reduced-motion: reduce) { .quick-link { transition: none; } a.quick-link:hover { transform: none; } }
