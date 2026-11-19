@@ -73,15 +73,11 @@ public class BudgetController {
             totalAllocated = budgetService.calculateTotalAllocatedAmount(bId);
             unallocated = budgetService.calculateUnallocatedAmount(bId);
             totalSpent = budgetExpenseService.calculateTotalBudgetSpending(bId);
-            remainingLimit = selectedBudget.getTotalLimit().subtract(totalSpent).setScale(2, RoundingMode.HALF_UP);
+            remainingLimit = budgetExpenseService.calculateRemainingBudgetAmount(bId);
             isBudgetOverrun = budgetExpenseService.isBudgetOverrun(bId);
             budgetOverrunAmount = budgetExpenseService.getBudgetOverrunAmount(bId);
 
-            List<BudgetCategory> categories = budgetService.getCategoriesByBudgetId(bId);
-            for (BudgetCategory cat : categories) {
-                BigDecimal spent = budgetExpenseService.calculateCategorySpending(cat.getId());
-                categoryViews.add(CategoryResponseDTO.fromEntity(cat, spent, bId));
-            }
+            categoryViews = budgetExpenseService.getCategorySpendingViews(bId);
 
             expenses = budgetExpenseService.getExpensesByBudgetId(bId);
         }

@@ -1,5 +1,6 @@
 package com.chipin.chipin.service;
 
+import com.chipin.chipin.dto.CategoryResponseDTO;
 import com.chipin.chipin.exception.BudgetNotFoundException;
 import com.chipin.chipin.exception.CategoryNotFoundException;
 import com.chipin.chipin.exception.DuplicateExternalExpenseException;
@@ -21,7 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Service managing financial expense transactions under budget categories.
@@ -398,6 +401,22 @@ public class BudgetExpenseService {
     }
 
     /**
+     * Calculates the remaining budget limit balance (totalLimit - totalBudgetSpent).
+     * Returns negative value if total spending has overrun the budget limit.
+     * Encapsulates financial arithmetic in the domain service layer to maintain strict MVC separation.
+     *
+     * @param budgetId the parent budget ID
+     * @return remaining budget limit balance with scale 2
+     */
+    @Transactional(readOnly = true)
+    public BigDecimal calculateRemainingBudgetAmount(Long budgetId) {
+        GroupBudget budget = budgetRepository.findById(budgetId)
+                .orElseThrow(() -> new BudgetNotFoundException(budgetId));
+        BigDecimal spent = calculateTotalBudgetSpending(budgetId);
+        return budget.getTotalLimit().subtract(spent).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    /**
      * Calculates the remaining category allocation balance (allocatedAmount - categorySpent).
      * Returns negative value if the category is currently overrun.
      *
@@ -410,6 +429,29 @@ public class BudgetExpenseService {
                 .orElseThrow(() -> new CategoryNotFoundException(categoryId));
         BigDecimal spent = calculateCategorySpending(categoryId);
         return category.getAllocatedAmount().subtract(spent).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Aggregates category spending summaries and DTO presentation views for a budget.
+     * Enriches each category with its non-voided spent amount, overrun status, and progress metrics.
+     * Encapsulates the aggregation loop in the service layer, keeping controllers focused solely on request orchestration.
+     *
+     * @param budgetId the parent budget ID
+     * @return list of CategoryResponseDTO objects representing spending breakdown
+     */
+    @Transactional(readOnly = true)
+    public List<CategoryResponseDTO> getCategorySpendingViews(Long budgetId) {
+        validateBudgetExists(budgetId);
+        List<BudgetCategory> categories = categoryRepository.findByBudgetId(budgetId);
+        if (categories == null || categories.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return categories.stream()
+                .map(cat -> {
+                    BigDecimal spent = calculateCategorySpending(cat.getId());
+                    return CategoryResponseDTO.fromEntity(cat, spent, budgetId);
+                })
+                .collect(Collectors.toList());
     }
 
     // ==========================================
