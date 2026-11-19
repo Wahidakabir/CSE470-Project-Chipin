@@ -97,7 +97,7 @@
             </div>
             <div class="stat-card">
                 <span class="stat-label">Remaining limit</span>
-                <span class="stat-value" th:classappend="${remainingLimit < 0 ? 'text-danger' : ''}">৳<span th:text="${remainingLimit}">0.00</span></span>
+                <span class="stat-value" th:classappend="${isBudgetOverrun ? 'text-danger' : ''}">৳<span th:text="${remainingLimit}">0.00</span></span>
             </div>
         </div>
 
@@ -125,13 +125,13 @@
                     </div>
                     <div class="progress-bar-bg">
                         <div class="progress-bar-fill"
-                             th:classappend="${cat.isOverrun ? 'fill-danger' : (cat.spentAmount.divide(cat.allocatedAmount, 2, 4) > 0.8 ? 'fill-warning' : 'fill-normal')}"
-                             th:style="'width: ' + ${cat.allocatedAmount.compareTo(0) > 0 ? (cat.spentAmount.multiply(100).divide(cat.allocatedAmount, 0, 4) > 100 ? 100 : cat.spentAmount.multiply(100).divide(cat.allocatedAmount, 0, 4)) : 0} + '%;'">
+                             th:classappend="${cat.progressFillClass}"
+                             th:style="'width: ' + ${cat.spendingPercentage} + '%;'">
                         </div>
                     </div>
                     <div class="category-footer">
-                        <span th:if="${cat.remainingAllocation >= 0}">Remaining: ৳<span th:text="${cat.remainingAllocation}">0.00</span></span>
-                        <span th:if="${cat.remainingAllocation < 0}" class="text-danger">Deficit: ৳<span th:text="${cat.overrunAmount}">0.00</span></span>
+                        <span th:if="${!cat.isOverrun}">Remaining: ৳<span th:text="${cat.remainingAllocation}">0.00</span></span>
+                        <span th:if="${cat.isOverrun}" class="text-danger">Deficit: ৳<span th:text="${cat.overrunAmount}">0.00</span></span>
                     </div>
                 </div>
             </div>

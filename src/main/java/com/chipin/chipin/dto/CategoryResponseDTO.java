@@ -21,6 +21,9 @@ public class CategoryResponseDTO {
     private BigDecimal remainingAllocation;
     private boolean isOverrun;
     private BigDecimal overrunAmount;
+    private int spendingPercentage;
+    private boolean isWarning;
+    private String progressFillClass;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -32,6 +35,16 @@ public class CategoryResponseDTO {
                                BigDecimal remainingAllocation, boolean isOverrun,
                                BigDecimal overrunAmount, LocalDateTime createdAt,
                                LocalDateTime updatedAt) {
+        this(id, budgetId, name, normalizedName, allocatedAmount, spentAmount, remainingAllocation,
+                isOverrun, overrunAmount, 0, false, "fill-normal", createdAt, updatedAt);
+    }
+
+    public CategoryResponseDTO(Long id, Long budgetId, String name, String normalizedName,
+                               BigDecimal allocatedAmount, BigDecimal spentAmount,
+                               BigDecimal remainingAllocation, boolean isOverrun,
+                               BigDecimal overrunAmount, int spendingPercentage,
+                               boolean isWarning, String progressFillClass,
+                               LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.budgetId = budgetId;
         this.name = name;
@@ -41,6 +54,9 @@ public class CategoryResponseDTO {
         this.remainingAllocation = remainingAllocation;
         this.isOverrun = isOverrun;
         this.overrunAmount = overrunAmount;
+        this.spendingPercentage = spendingPercentage;
+        this.isWarning = isWarning;
+        this.progressFillClass = progressFillClass;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -48,6 +64,8 @@ public class CategoryResponseDTO {
     /**
      * Maps a BudgetCategory entity into a CategoryResponseDTO with explicitly provided parent budgetId.
      * Guarantees lazy-loading safety without relying on defensive try-catch exception suppression.
+     * Pre-calculates presentation metrics (spending percentage, warning status, and progress fill CSS class)
+     * to strictly enforce MVC separation of concerns and eliminate business calculations from views.
      *
      * @param category the BudgetCategory entity
      * @param spentAmount total non-voided spending recorded under this category
@@ -65,6 +83,29 @@ public class CategoryResponseDTO {
         boolean overrun = spent.compareTo(allocated) > 0;
         BigDecimal overrunAmt = overrun ? spent.subtract(allocated).setScale(2, RoundingMode.HALF_UP) : BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
 
+        int spendingPercentage = 0;
+        if (allocated.compareTo(BigDecimal.ZERO) > 0) {
+            int pct = spent.multiply(new BigDecimal(100)).divide(allocated, 0, RoundingMode.HALF_UP).intValue();
+            if (pct > 100) {
+                pct = 100;
+            } else if (pct < 0) {
+                pct = 0;
+            }
+            spendingPercentage = pct;
+        }
+
+        boolean warning = !overrun && allocated.compareTo(BigDecimal.ZERO) > 0
+                && spent.divide(allocated, 4, RoundingMode.HALF_UP).compareTo(new BigDecimal("0.80")) > 0;
+
+        String progressFillClass;
+        if (overrun) {
+            progressFillClass = "fill-danger";
+        } else if (warning) {
+            progressFillClass = "fill-warning";
+        } else {
+            progressFillClass = "fill-normal";
+        }
+
         return new CategoryResponseDTO(
                 category.getId(),
                 budgetId,
@@ -75,6 +116,9 @@ public class CategoryResponseDTO {
                 remaining,
                 overrun,
                 overrunAmt,
+                spendingPercentage,
+                warning,
+                progressFillClass,
                 category.getCreatedAt(),
                 category.getUpdatedAt()
         );
@@ -150,6 +194,30 @@ public class CategoryResponseDTO {
 
     public void setOverrunAmount(BigDecimal overrunAmount) {
         this.overrunAmount = overrunAmount;
+    }
+
+    public int getSpendingPercentage() {
+        return spendingPercentage;
+    }
+
+    public void setSpendingPercentage(int spendingPercentage) {
+        this.spendingPercentage = spendingPercentage;
+    }
+
+    public boolean isWarning() {
+        return isWarning;
+    }
+
+    public void setWarning(boolean warning) {
+        isWarning = warning;
+    }
+
+    public String getProgressFillClass() {
+        return progressFillClass;
+    }
+
+    public void setProgressFillClass(String progressFillClass) {
+        this.progressFillClass = progressFillClass;
     }
 
     public LocalDateTime getCreatedAt() {

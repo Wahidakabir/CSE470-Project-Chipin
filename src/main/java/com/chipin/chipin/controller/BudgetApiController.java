@@ -142,15 +142,12 @@ public class BudgetApiController {
         BigDecimal totalAllocated = budgetService.calculateTotalAllocatedAmount(id);
         BigDecimal unallocated = budgetService.calculateUnallocatedAmount(id);
         BigDecimal totalSpent = budgetExpenseService.calculateTotalBudgetSpending(id);
-        BigDecimal remainingLimit = totalLimit.subtract(totalSpent).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal remainingLimit = budgetExpenseService.calculateRemainingBudgetAmount(id);
         boolean isBudgetOverrun = budgetExpenseService.isBudgetOverrun(id);
         BigDecimal budgetOverrunAmount = budgetExpenseService.getBudgetOverrunAmount(id);
         boolean hasAnyCategoryOverrun = budgetExpenseService.hasAnyCategoryOverrun(id);
 
-        List<BudgetCategory> categories = budgetService.getCategoriesByBudgetId(id);
-        List<CategoryResponseDTO> categoryDTOs = categories.stream()
-                .map(cat -> toCategoryResponseDTO(cat, id))
-                .toList();
+        List<CategoryResponseDTO> categoryDTOs = budgetExpenseService.getCategorySpendingViews(id);
 
         BudgetSpendingResponseDTO spendingDTO = new BudgetSpendingResponseDTO(
                 id,
@@ -200,10 +197,7 @@ public class BudgetApiController {
     @GetMapping("/{budgetId}/categories")
     public ResponseEntity<List<CategoryResponseDTO>> getCategoriesByBudgetId(
             @PathVariable("budgetId") Long budgetId) {
-        List<BudgetCategory> categories = budgetService.getCategoriesByBudgetId(budgetId);
-        List<CategoryResponseDTO> response = categories.stream()
-                .map(cat -> toCategoryResponseDTO(cat, budgetId))
-                .toList();
+        List<CategoryResponseDTO> response = budgetExpenseService.getCategorySpendingViews(budgetId);
         return ResponseEntity.ok(response);
     }
 
@@ -236,10 +230,7 @@ public class BudgetApiController {
         boolean isOverrun = budgetExpenseService.isBudgetOverrun(budgetId);
         BigDecimal overrunAmount = budgetExpenseService.getBudgetOverrunAmount(budgetId);
 
-        List<BudgetCategory> categories = budgetService.getCategoriesByBudgetId(budgetId);
-        List<CategoryResponseDTO> categoryDTOs = categories.stream()
-                .map(cat -> toCategoryResponseDTO(cat, budgetId))
-                .toList();
+        List<CategoryResponseDTO> categoryDTOs = budgetExpenseService.getCategorySpendingViews(budgetId);
 
         return BudgetResponseDTO.fromEntity(
                 budget,

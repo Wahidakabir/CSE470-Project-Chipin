@@ -1,5 +1,6 @@
 package com.chipin.chipin;
 
+import com.chipin.chipin.dto.CategoryResponseDTO;
 import com.chipin.chipin.exception.BudgetNotFoundException;
 import com.chipin.chipin.exception.CategoryNotFoundException;
 import com.chipin.chipin.exception.DuplicateExternalExpenseException;
@@ -193,5 +194,101 @@ class BudgetExpenseServiceTest {
                         "Linked expense", LocalDate.of(2026, 11, 15), 888L
                 )
         );
+    }
+
+    @Test
+    @DisplayName("Should correctly calculate remaining budget balance when within limit")
+    void testCalculateRemainingBudgetAmount_Normal() {
+        BudgetExpense exp = new BudgetExpense(sampleCategory, "Afifa", "Afifa",
+                new BigDecimal("2500.00"), "Groceries", LocalDate.of(2026, 11, 10), "Afifa");
+        exp.setStatus(ExpenseStatus.RECORDED);
+
+        when(budgetRepository.findById(1L)).thenReturn(Optional.of(sampleBudget));
+        when(budgetRepository.existsById(1L)).thenReturn(true);
+        when(expenseRepository.findByCategoryBudgetIdAndStatus(1L, ExpenseStatus.RECORDED))
+                .thenReturn(List.of(exp));
+
+        BigDecimal remaining = expenseService.calculateRemainingBudgetAmount(1L);
+
+        assertEquals(new BigDecimal("7500.00"), remaining);
+    }
+
+    @Test
+    @DisplayName("Should correctly return negative remaining budget balance when budget is overrun")
+    void testCalculateRemainingBudgetAmount_Overrun() {
+        BudgetExpense exp = new BudgetExpense(sampleCategory, "Afifa", "Afifa",
+                new BigDecimal("12500.00"), "Overrun purchase", LocalDate.of(2026, 11, 10), "Afifa");
+        exp.setStatus(ExpenseStatus.RECORDED);
+
+        when(budgetRepository.findById(1L)).thenReturn(Optional.of(sampleBudget));
+        when(budgetRepository.existsById(1L)).thenReturn(true);
+        when(expenseRepository.findByCategoryBudgetIdAndStatus(1L, ExpenseStatus.RECORDED))
+                .thenReturn(List.of(exp));
+
+        BigDecimal remaining = expenseService.calculateRemainingBudgetAmount(1L);
+
+        assertEquals(new BigDecimal("-2500.00"), remaining);
+    }
+
+    @Test
+    @DisplayName("Should aggregate category spending views with pre-calculated progress and warning metrics")
+    void testGetCategorySpendingViews_AggregationAndMetrics() {
+        BudgetCategory catWarning = new BudgetCategory(sampleBudget, "Utilities", new BigDecimal("1000.00"));
+        catWarning.setId(20L);
+
+        BudgetCategory catOverrun = new BudgetCategory(sampleBudget, "Entertainment", new BigDecimal("500.00"));
+        catOverrun.setId(30L);
+
+        when(budgetRepository.existsById(1L)).thenReturn(true);
+        when(categoryRepository.findByBudgetId(1L)).thenReturn(List.of(sampleCategory, catWarning, catOverrun));
+
+        // sampleCategory: 4000 allocated, 1000 spent -> 25%, fill-normal, not warning, not overrun
+        BudgetExpense e1 = new BudgetExpense(sampleCategory, "Afifa", "Afifa", new BigDecimal("1000.00"), "Food", LocalDate.now(), "Afifa");
+        when(categoryRepository.existsById(10L)).thenReturn(true);
+        when(expenseRepository.findByCategoryIdAndStatus(10L, ExpenseStatus.RECORDED)).thenReturn(List.of(e1));
+
+        // catWarning: 1000 allocated, 850 spent -> 85%, fill-warning, isWarning=true, not overrun
+        BudgetExpense e2 = new BudgetExpense(catWarning, "Mufliha", "Mufliha", new BigDecimal("850.00"), "Bills", LocalDate.now(), "Mufliha");
+        when(categoryRepository.existsById(20L)).thenReturn(true);
+        when(expenseRepository.findByCategoryIdAndStatus(20L, ExpenseStatus.RECORDED)).thenReturn(List.of(e2));
+
+        // catOverrun: 500 allocated, 600 spent -> 100% clamped, fill-danger, isOverrun=true
+        BudgetExpense e3 = new BudgetExpense(catOverrun, "Musarrat", "Musarrat", new BigDecimal("600.00"), "Movies", LocalDate.now(), "Musarrat");
+        when(categoryRepository.existsById(30L)).thenReturn(true);
+        when(expenseRepository.findByCategoryIdAndStatus(30L, ExpenseStatus.RECORDED)).thenReturn(List.of(e3));
+
+        List<CategoryResponseDTO> views = expenseService.getCategorySpendingViews(1L);
+
+        assertEquals(3, views.size());
+
+        // Category 1: normal
+        CategoryResponseDTO v1 = views.get(0);
+        assertEquals(10L, v1.getId());
+        assertEquals(new BigDecimal("1000.00"), v1.getSpentAmount());
+        assertEquals(new BigDecimal("3000.00"), v1.getRemainingAllocation());
+        assertEquals(25, v1.getSpendingPercentage());
+        assertFalse(v1.isWarning());
+        assertFalse(v1.isOverrun());
+        assertEquals("fill-normal", v1.getProgressFillClass());
+
+        // Category 2: warning threshold (> 80%)
+        CategoryResponseDTO v2 = views.get(1);
+        assertEquals(20L, v2.getId());
+        assertEquals(new BigDecimal("850.00"), v2.getSpentAmount());
+        assertEquals(new BigDecimal("150.00"), v2.getRemainingAllocation());
+        assertEquals(85, v2.getSpendingPercentage());
+        assertTrue(v2.isWarning());
+        assertFalse(v2.isOverrun());
+        assertEquals("fill-warning", v2.getProgressFillClass());
+
+        // Category 3: overrun
+        CategoryResponseDTO v3 = views.get(2);
+        assertEquals(30L, v3.getId());
+        assertEquals(new BigDecimal("600.00"), v3.getSpentAmount());
+        assertEquals(new BigDecimal("-100.00"), v3.getRemainingAllocation());
+        assertEquals(new BigDecimal("100.00"), v3.getOverrunAmount());
+        assertEquals(100, v3.getSpendingPercentage());
+        assertTrue(v3.isOverrun());
+        assertEquals("fill-danger", v3.getProgressFillClass());
     }
 }
