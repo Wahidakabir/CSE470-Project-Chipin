@@ -1,0 +1,16 @@
+/* Eco Quiz page. Colours and type come from chipin-ui.css and the theme. */
+.balance-card { display: flex; justify-content: space-between; align-items: center; }
+.balance { font-family: var(--font-display); font-weight: 800; font-size: 2rem; }
+.question-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.answer-form { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; margin-top: 12px; }
+.choice {
+  display: flex; align-items: center; gap: 8px; padding: 10px 16px; cursor: pointer;
+  border: 2px solid var(--field-border); border-radius: 999px; font-size: 0.95rem; color: var(--ink);
+}
+.choice:has(input:checked) { border-color: var(--brand); background: var(--brand-wash); }
+.choice input { accent-color: var(--brand); width: 16px; height: 16px; padding: 0; }
+.countdown { font-weight: 800; font-size: 1.2rem; margin: 12px 0 0; color: var(--owe-ink); }
+.session-card { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+.session-card h2 { margin: 0 0 4px; }
+.summary { font-weight: 800; margin: 8px 0 0; color: var(--brand-strong); }
+.explain { margin: 8px 0 0; padding: 10px 14px; background: var(--ground); border-radius: var(--r-md); color: var(--ink-2); font-size: 0.92rem; }

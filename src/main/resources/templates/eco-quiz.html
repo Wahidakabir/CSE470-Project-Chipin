@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Chipin — Eco quiz</title>
+    <link rel="stylesheet" th:href="@{/css/chipin-ui.css}">
+    <link rel="stylesheet" th:href="@{/css/theme-fun.css}">
+    <link rel="stylesheet" th:href="@{/css/eco-quiz.css}">
+</head>
+<body>
+<div class="container">
+    <header class="appbar">
+        <a class="brand" th:href="@{/debts(currentUser=${currentUser})}">Chipin</a>
+        <nav class="tabs" aria-label="Chipin features">
+            <a th:href="@{/debts(currentUser=${currentUser})}" class="tab">Debts</a>
+            <a th:href="@{/bills(currentUser=${currentUser})}" class="tab">Itemized bills</a>
+            <a th:href="@{/roundup(currentUser=${currentUser})}" class="tab">Round-up</a>
+            <a th:href="@{/eco-quiz(currentUser=${currentUser})}" class="tab active">Eco quiz</a>
+        </nav>
+        <form method="get" th:action="@{/eco-quiz}" class="user-switcher">
+            <label for="currentUser">Acting as</label>
+            <select id="currentUser" name="currentUser" onchange="this.form.submit()">
+                <option th:each="m : ${members}" th:value="${m}" th:text="${m}"
+                        th:selected="${m == currentUser}"></option>
+            </select>
+        </form>
+    </header>
+
+    <div class="page-head">
+        <h1>Eco quiz</h1>
+        <p class="subtitle">Each session has 5 new questions you have never seen. Press Start to reveal a question; the timer starts at once and cannot be paused. A correct answer inside the time earns green credits, with a bonus for answering fast.</p>
+    </div>
+
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}"></div>
+
+    <section class="card balance-card">
+        <span class="meta">Green credits for <span th:text="${currentUser}">you</span></span>
+        <span class="balance" th:text="${view.balance}">0.00</span>
+    </section>
+
+    <section class="card session-card">
+        <div>
+            <h2 th:if="${view.hasSession}" th:text="${view.sessionTitle}">Session 1</h2>
+            <h2 th:unless="${view.hasSession}">No session yet</h2>
+            <p class="meta" th:if="${view.hasSession}" th:text="${view.progressText}">0 of 5 questions finished</p>
+            <p class="summary" th:if="${view.summaryText != null}" th:text="${view.summaryText}">Session complete</p>
+            <p class="hint" th:if="${view.startBlockedReason != null}" th:text="${view.startBlockedReason}">Reason</p>
+        </div>
+        <form th:if="${view.canStartNewSession}" th:action="@{/eco-quiz/new-session}" method="post">
+            <input type="hidden" name="currentUser" th:value="${currentUser}"/>
+            <button type="submit" class="btn btn-primary">Start a new session</button>
+        </form>
+    </section>
+
+    <section class="card" th:each="q : ${view.items}">
+        <div class="question-head">
+            <h3 th:text="${q.title}">Question 1</h3>
+        </div>
+        <p class="meta" th:text="${q.rewardText}">2 credits</p>
+
+        <!-- Not started: only a Start button, no question text -->
+        <form th:if="${q.notStarted}" th:action="@{/eco-quiz/attempts/{id}/start(id=${q.attemptId})}" method="post" class="answer-form">
+            <input type="hidden" name="currentUser" th:value="${currentUser}"/>
+            <button type="submit" class="btn btn-primary">Start question</button>
+        </form>
+
+        <!-- Timer running -->
+        <div th:if="${q.inProgress}" class="timed" th:attr="data-remaining=${q.remainingSeconds}">
+            <p class="countdown">Time left: <span class="countdown-number" th:text="${q.remainingSeconds}">20</span> s</p>
+            <form th:action="@{/eco-quiz/attempts/{id}/answer(id=${q.attemptId})}" method="post" class="answer-form">
+                <input type="hidden" name="currentUser" th:value="${currentUser}"/>
+                <label class="choice" th:each="opt, stat : ${q.options}">
+                    <input type="radio" name="choice" th:value="${stat.index}" required/>
+                    <span th:text="${opt}">Option</span>
+                </label>
+                <button type="submit" class="btn btn-primary">Submit answer</button>
+            </form>
+        </div>
+
+        <p th:if="${q.answered or q.timedOut}" class="hint" th:text="${q.resultText}">Result</p>
+        <p th:if="${q.explanation != null}" class="explain" th:text="${q.explanation}">Explanation</p>
+    </section>
+</div>
+
+<script>
+    // Counts down the time left. The server still decides whether an answer is on time.
+    document.querySelectorAll('[data-remaining]').forEach(function (box) {
+        var left = parseInt(box.getAttribute('data-remaining'), 10);
+        var number = box.querySelector('.countdown-number');
+        var form = box.querySelector('form');
+        function tick() {
+            number.textContent = left;
+            if (left <= 0) {
+                form.querySelectorAll('input, button').forEach(function (el) { el.disabled = true; });
+                setTimeout(function () { window.location.reload(); }, 1000);
+                return;
+            }
+            left -= 1;
+            setTimeout(tick, 1000);
+        }
+        tick();
+    });
+</script>
+</body>
+</html>
